@@ -1,5 +1,5 @@
 {
-  "name": "steganography",
+  "name": "steganograph",
   "version": "1.0.0",
   "description": "command-line steganography application",
   "main": "index.js",

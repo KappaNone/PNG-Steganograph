@@ -1,11 +1,6 @@
 import * as fs from "fs";
-import { argv, exit } from "node:process";
+import { exit } from "node:process";
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-const imagePath = argv[2];
-if (imagePath == undefined) {
-    console.error("ERROR: No input file is provided");
-    exit(1);
-}
 function openPng(path) {
     let imageBuf;
     try {
@@ -21,51 +16,125 @@ function openPng(path) {
     }
     return imageBuf;
 }
-function isPng(buffer) {
-    const bufSig = buffer.subarray(0, PNG_SIG.length);
-    return bufSig.equals(PNG_SIG);
+function writePng(fileName, buffer) {
+    try {
+        fs.writeFileSync(fileName, buffer);
+    }
+    catch (err) {
+        console.error(`ERROR: Could not write file ${fileName}`);
+        exit(1);
+    }
 }
-function getHeaderData(headerChunk) {
-    return {
-        width: headerChunk.data.readInt32BE(0),
-        height: headerChunk.data.readInt32BE(4),
-        bitDepth: headerChunk.data.readUInt8(8),
-        colorType: headerChunk.data.readUInt8(9),
-        compressionMethod: headerChunk.data.readUInt8(10),
-        filterMethod: headerChunk.data.readUInt8(11),
-        interlaceMethod: headerChunk.data.readUInt8(12)
-    };
+function isPng(file) {
+    const signature = Buffer.alloc(PNG_SIG.length);
+    setBytes(file, signature, 0);
+    return signature.equals(PNG_SIG);
 }
-function getChunk(buffer, chunkStart) {
-    const chunkSize = buffer.readInt32BE(chunkStart);
-    const chunkEnd = chunkStart + 12 + chunkSize;
-    const chunkType = buffer.subarray(chunkStart + 4, chunkStart + 8).toString('ascii');
-    const chunkData = buffer.subarray(chunkStart + 8, chunkStart + 8 + chunkSize);
-    const chunkCRC = buffer.subarray(chunkStart + 8 + chunkSize, chunkEnd);
+function setBytes(file, buffer, offset) {
+    const byteLength = Buffer.byteLength(buffer);
+    const endPos = offset + byteLength;
+    try {
+        buffer.set(file.subarray(offset, endPos));
+    }
+    catch {
+        console.error("ERROR: Failed to set bytes in the buffer");
+        exit(1);
+    }
+    return endPos;
+}
+function getChunk(file, chunkStart) {
+    const chunkSize = Buffer.alloc(4);
+    const chunkSizeEnd = setBytes(file, chunkSize, chunkStart);
+    const chunkType = Buffer.alloc(4);
+    const chunkTypeEnd = setBytes(file, chunkType, chunkSizeEnd);
+    const chunkData = Buffer.alloc(chunkSize.readInt32BE());
+    const chunkDataEnd = setBytes(file, chunkData, chunkTypeEnd);
+    const chunkCRC = Buffer.alloc(4);
+    const chunkEnd = setBytes(file, chunkCRC, chunkDataEnd);
     const chunk = {
-        size: chunkSize,
-        type: chunkType,
+        size: chunkSize.readInt32BE(),
+        type: chunkType.toString('ascii'),
         data: chunkData,
-        crc: Uint8Array.from(chunkCRC),
-        end: chunkEnd
+        crc: chunkCRC
     };
-    if (chunk.type == "IHDR") {
-        return { ...chunk, data: getHeaderData(chunk) };
-    }
-    return chunk;
+    return [chunk, chunkEnd];
 }
-function getChunks(buffer) {
+function getChunks(file) {
     const chunks = [];
-    let chunk = getChunk(buffer, PNG_SIG.length);
-    while (chunk.end != buffer.length) {
+    let [chunk, chunkEnd] = getChunk(file, PNG_SIG.length);
+    let done = false;
+    while (!done) {
         chunks.push(chunk);
-        chunk = getChunk(buffer, chunk.end);
+        if (chunk.type === "IEND")
+            done = true;
+        [chunk, chunkEnd] = getChunk(file, chunkEnd);
     }
-    chunks.push(chunk);
     return chunks;
 }
-const image = openPng(imagePath);
-const chunks = getChunks(image);
-for (let chunk of chunks) {
-    console.log(chunk);
+function chunkToBuffer(chunk) {
+    const chunkSize = Buffer.alloc(4);
+    const chunkType = Buffer.alloc(4);
+    chunkSize.writeInt32BE(chunk.size);
+    chunkType.write(chunk.type);
+    return Buffer.concat([chunkSize, chunkType, chunk.data, chunk.crc]);
 }
+function chunksToBuffer(chunks) {
+    const buffers = [PNG_SIG];
+    for (let chunk of chunks) {
+        buffers.push(chunkToBuffer(chunk));
+    }
+    return Buffer.concat(buffers);
+}
+function deleteSecretChunks(chunks) {
+    const secretChunkIndex = chunks.findIndex(chunk => chunk.type == "scRT");
+    if (secretChunkIndex != -1) {
+        try {
+            chunks.splice(secretChunkIndex, 1);
+        }
+        catch {
+            console.error("ERROR: Cannot delete an existing secret chunk");
+            exit(1);
+        }
+    }
+}
+function putSecretChunk(chunks, secretMsg) {
+    deleteSecretChunks(chunks);
+    const secretMsgBuffer = Buffer.from(secretMsg);
+    const secretChunk = {
+        size: Buffer.byteLength(secretMsgBuffer),
+        type: "scRT",
+        data: secretMsgBuffer,
+        crc: Buffer.alloc(4)
+    };
+    try {
+        chunks.splice(chunks.length - 1, 0, secretChunk);
+    }
+    catch {
+        console.error("ERROR: Cannot add a new secret chunk");
+        exit(1);
+    }
+}
+function getSecretChunk(chunks) {
+    const secretChunkIndex = chunks.findIndex(chunk => chunk.type == "scRT");
+    if (secretChunkIndex != -1) {
+        return chunks[secretChunkIndex];
+    }
+    else {
+        return null;
+    }
+}
+const image = openPng("output2.png");
+const chunks = getChunks(image);
+//* Put secret message into the image
+// putSecretChunk(chunks, "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.");
+// const outputBuffer = chunksToBuffer(chunks);
+// writePng("output2.png", outputBuffer);
+//* Get secret message from the image
+const secretChunk = getSecretChunk(chunks);
+if (secretChunk == null) {
+    console.log("No secret message found");
+    exit(0);
+}
+;
+console.info(`Secret message: ${secretChunk.data.toString()}`);
+//TODO: Create a convenient CLI
