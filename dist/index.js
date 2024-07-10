@@ -137,6 +137,7 @@ function getSecretChunk(chunks) {
 // const secretChunk = getSecretChunk(chunks);
 // if (secretChunk == null) { console.log("No secret message found"); exit(0) };
 // console.info(`Secret message: ${secretChunk.data.toString()}`);
+// CLI
 const args = argv.slice(2);
 const rl = readLine.createInterface({
     input: process.stdin,

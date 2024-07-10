@@ -5,6 +5,9 @@
   "main": "index.js",
   "author": "KappaNone",
   "license": "MIT",
+  "bin": {
+    "steg": "./dist/index.js"
+  },
   "devDependencies": {
     "@types/node": "^20.14.10",
     "tsx": "^4.16.2",
@@ -15,7 +18,8 @@
   },
   "type": "module",
   "scripts": {
-    "dev": "tsx watch index.ts --reveal",
-    "start": "tsx index.ts"
+    "dev": "tsx watch index.ts",
+    "start": "tsx index.ts",
+    "build": "tsc"
   }
 }

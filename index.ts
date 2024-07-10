@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as fs from "fs";
 import * as readLine from "node:readline"
 import { argv, exit } from "node:process";
@@ -164,6 +165,7 @@ function getSecretChunk(chunks: Chunk[]): Chunk | null {
 // if (secretChunk == null) { console.log("No secret message found"); exit(0) };
 // console.info(`Secret message: ${secretChunk.data.toString()}`);
 
+// CLI
 const args = argv.slice(2);
 const rl = readLine.createInterface({
   input: process.stdin,
