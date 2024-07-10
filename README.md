@@ -10,19 +10,19 @@ $ yarn run start
 ## Global usage
 
 ### Install `tsx` globally:
-    ```console
-    $ npm install tsx -g
-    ```
+```console
+$ npm install tsx -g
+```
 
 ### Install dependencies globally:
-    ```console
-    $ npm install -g
-    ```
+```console
+$ npm install -g
+```
 
 ### To run the script, use the command:
-    ```console
-    $ steg
-    ```
+```console
+$ steg
+```
 
 ## References
 
