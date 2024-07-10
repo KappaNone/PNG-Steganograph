@@ -1,4 +1,3 @@
-#!/usr/bin/env tsx
 import * as fs from "fs";
 import * as readLine from "node:readline"
 import { argv, exit } from "node:process";
@@ -173,6 +172,7 @@ function getSecretChunk(chunks: Chunk[]): Chunk | null {
 
 //* CLI
 const args = argv.slice(2);
+const actionFlag = args[0]
 
 if (args.length === 0) {
   console.info("Usage: steg --hide || --reveal");
@@ -184,7 +184,7 @@ const rl = readLine.createInterface({
   output: process.stdout
 })
 
-if (args[0] === "--hide") {
+if (actionFlag === "--hide") {
   console.log('\n')
   rl.question('Enter target PNG filename with extension: ', targetFile => {
     rl.question('Enter output PNG filename: ', outputFile => {
@@ -215,7 +215,7 @@ if (args[0] === "--hide") {
   })
 }
 
-else if (args[0] === "--reveal") {
+else if (actionFlag === "--reveal") {
   console.log('\n')
   rl.question("Enter target PNG filename with extension: ", targetFile => {
     if (path.extname(targetFile) === '') {

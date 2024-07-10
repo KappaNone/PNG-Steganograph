@@ -9,9 +9,9 @@ $ yarn run start
 
 ## Global usage
 
-### Install `tsx` globally:
+### Build:
 ```console
-$ npm install tsx -g
+$ yarn run build
 ```
 
 ### Install script globally:
