@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as fs from "fs";
 import * as readLine from "node:readline"
 import { argv, exit } from "node:process";
