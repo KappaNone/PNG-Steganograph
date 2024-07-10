@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import * as fs from "fs";
 import * as readLine from "node:readline"
 import { argv, exit } from "node:process";
@@ -57,9 +56,9 @@ function setBytes(file: Buffer, buffer: Buffer, offset: number): number {
   return endPos;
 }
 
-function getChunk(file: Buffer, chunkStart: number): [Chunk, number] {
+function getChunk(file: Buffer, offset: number): [Chunk, number]{
   const chunkSize = Buffer.alloc(4);
-  const chunkSizeEnd = setBytes(file, chunkSize, chunkStart);
+  const chunkSizeEnd = setBytes(file, chunkSize, offset);
 
   const chunkType = Buffer.alloc(4);
   const chunkTypeEnd = setBytes(file, chunkType, chunkSizeEnd);
@@ -128,11 +127,11 @@ function deleteSecretChunks(chunks: Chunk[]): void {
 function putSecretChunk(chunks: Chunk[], secretMsg: string): void {
 
   deleteSecretChunks(chunks);
-  const secretMsgBuffer = Buffer.from(secretMsg);
+  const secretMsgData = Buffer.from(secretMsg);
   const secretChunk = {
-    size: Buffer.byteLength(secretMsgBuffer),
+    size: Buffer.byteLength(secretMsgData),
     type: "scRT",
-    data: secretMsgBuffer,
+    data: secretMsgData,
     crc: Buffer.alloc(4)
   }
   

@@ -46,9 +46,9 @@ function setBytes(file, buffer, offset) {
     }
     return endPos;
 }
-function getChunk(file, chunkStart) {
+function getChunk(file, offset) {
     const chunkSize = Buffer.alloc(4);
-    const chunkSizeEnd = setBytes(file, chunkSize, chunkStart);
+    const chunkSizeEnd = setBytes(file, chunkSize, offset);
     const chunkType = Buffer.alloc(4);
     const chunkTypeEnd = setBytes(file, chunkType, chunkSizeEnd);
     const chunkData = Buffer.alloc(chunkSize.readInt32BE());
@@ -103,11 +103,11 @@ function deleteSecretChunks(chunks) {
 }
 function putSecretChunk(chunks, secretMsg) {
     deleteSecretChunks(chunks);
-    const secretMsgBuffer = Buffer.from(secretMsg);
+    const secretMsgData = Buffer.from(secretMsg);
     const secretChunk = {
-        size: Buffer.byteLength(secretMsgBuffer),
+        size: Buffer.byteLength(secretMsgData),
         type: "scRT",
-        data: secretMsgBuffer,
+        data: secretMsgData,
         crc: Buffer.alloc(4)
     };
     try {
