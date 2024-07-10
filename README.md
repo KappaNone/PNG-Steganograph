@@ -9,17 +9,19 @@ $ yarn run start
 
 ## Global usage
 
+- 
+
 ### Build:
 ```console
 $ yarn run build
 ```
 
-### Install script globally:
+### Install package globally:
 ```console
 $ npm install -g
 ```
 
-### To run the script, use the command:
+### Use the command:
 ```console
 $ steg
 ```

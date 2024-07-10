@@ -236,7 +236,7 @@ else if (actionFlag === "--reveal") {
 }
 
 else {
-  console.info("Invalid command. Use --hide or --reveal");
+  console.info("Invalid flag. Use --hide or --reveal");
   rl.close();
   exit(0);
 }
