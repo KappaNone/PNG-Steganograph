@@ -1,10 +1,23 @@
+#!/usr/bin/env tsx
 import * as fs from "fs";
 import * as readLine from "node:readline"
 import { argv, exit } from "node:process";
 import path from "node:path"
-import chalk from "chalk";
 
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+declare global {
+  interface Console {
+    /** The `console.success()` function is an alias for {@link log}. */
+    success(message?: any, ...optionalParams: any[]): void;
+  }
+}
+
+console.success = (message?: any, ...optionalParams: any[]) => {
+  process.stdout.write("\x1b[32m");
+  console.log(message, ...optionalParams);
+  process.stdout.write("\x1b[0m");
+}
 
 interface Chunk {
   size: number,
@@ -20,10 +33,10 @@ function openPng(fileName: string): Buffer {
   catch (err: any) {
     switch (err.code) {
       case "ENOENT":
-        console.error(`ERROR: File ${fileName} not found`);
+        console.error(err.message);
         break;
       default:
-        console.error(`ERROR: Could not open file ${fileName}: ${err.message}`); 
+        console.error(err.message); 
         break;
     }
     exit(1);
@@ -38,7 +51,7 @@ function openPng(fileName: string): Buffer {
 function writePng(fileName: string, buffer: Buffer): void {
   try { fs.writeFileSync(fileName, buffer) }
   catch (err) {
-    console.error(`ERROR: Could not write file ${fileName}`);
+    console.error(`ERROR: Could not write file '${fileName}'`);
     exit(1);
   }
 }
@@ -158,42 +171,33 @@ function getSecretChunk(chunks: Chunk[]): Chunk | null {
   }
 }
 
-// const image = openPng("target.png");
-// const chunks = getChunks(image);
-
-//* Put secret message into the image
-// putSecretChunk(chunks, "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.");
-// const outputBuffer = chunksToBuffer(chunks);
-// writePng("output.png", outputBuffer);
-
-//* Get secret message from the image
-// const secretChunk = getSecretChunk(chunks);
-// if (secretChunk == null) { console.log("No secret message found"); exit(0) };
-// console.info(`Secret message: ${secretChunk.data.toString()}`);
-
-// CLI
+//* CLI
 const args = argv.slice(2);
-const rl = readLine.createInterface({
-  input: process.stdin,
-  output: process.stdout
-})
 
 if (args.length === 0) {
   console.info("Usage: steg --hide || --reveal");
   exit(0);
 }
 
+const rl = readLine.createInterface({
+  input: process.stdin,
+  output: process.stdout
+})
+
 if (args[0] === "--hide") {
-  rl.question('Enter target PNG filename: ', targetFile => {
+  console.log('\n')
+  rl.question('Enter target PNG filename with extension: ', targetFile => {
     rl.question('Enter output PNG filename: ', outputFile => {
       rl.question('Enter secret message: ', secretMsg => {
-        if (path.extname(targetFile) !== ".png") {
-          targetFile += ".png"
-          console.log(chalk.yellow(`WARNING: Target filename will be overwritten as ${targetFile}`))
+
+        if (path.extname(targetFile) === '') {
+          console.error(`ERROR: ${targetFile} must contain an extension`)
+          exit(0)
         }
+      
         if (path.extname(outputFile)!== ".png") {
           outputFile += ".png"
-          console.log(chalk.yellow(`WARNING: Output filename will be overwritten as ${outputFile}`))
+          console.warn(`WARNING: Output filename will be overwritten as '${outputFile}'`)
         }
         const image = openPng(targetFile);
         const chunks = getChunks(image);
@@ -202,7 +206,7 @@ if (args[0] === "--hide") {
         const outputBuffer = chunksToBuffer(chunks);
         writePng(outputFile, outputBuffer);
 
-        console.log(chalk.green(`Message '${secretMsg}' was successfully hidden in '${outputFile}'`))
+        console.success(`Message '${secretMsg}' was successfully hidden in '${outputFile}'`, '\n');
 
         rl.close()
         exit(0);
@@ -211,11 +215,12 @@ if (args[0] === "--hide") {
   })
 }
 
-if (args[0] === "--reveal") {
-  rl.question("Enter target PNG filename: ", targetFile => {
-    if (path.extname(targetFile) !== ".png") {
-      targetFile += ".png"
-      console.log(chalk.yellow(`WARNING: Target filename will be overwritten as ${targetFile}`))
+else if (args[0] === "--reveal") {
+  console.log('\n')
+  rl.question("Enter target PNG filename with extension: ", targetFile => {
+    if (path.extname(targetFile) === '') {
+      console.error(`ERROR: '${targetFile}' must contain an extension`)
+      exit(0)
     }
 
     const image = openPng(targetFile);
@@ -223,9 +228,15 @@ if (args[0] === "--reveal") {
 
     const secretChunk = getSecretChunk(chunks);
     if (secretChunk == null) { console.info("No secret message found"); exit(0) };
-    console.log(chalk.green(`Secret message: ${secretChunk.data.toString()}`));
+    console.success(`Secret message: ${secretChunk.data.toString()}`, '\n');
 
     rl.close()
     exit(0);
   });
+}
+
+else {
+  console.info("Invalid command. Use --hide or --reveal");
+  rl.close();
+  exit(0);
 }
