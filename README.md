@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```console
-$ yarn install
+$ yarn --frozen-lockfile install
 $ yarn run start
 ```
 
