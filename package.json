@@ -7,10 +7,17 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "tsx": "^4.16.2",
     "typescript": "^5.5.3"
   },
   "type": "module",
+  "bin": {
+    "steg": "index.js"
+  },
   "scripts": {
-    "dev": "node watch"
+    "dev": "tsx watch index.ts --reveal"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0"
   }
 }

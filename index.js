@@ -1,13 +1,17 @@
+#!/usr/bin/env node
 import * as fs from "fs";
-import { exit } from "node:process";
+import * as readLine from "node:readline";
+import { argv, exit } from "node:process";
+import path from "node:path";
+import chalk from "chalk";
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
-function openPng(path) {
+function openPng(fileName) {
     let imageBuf;
     try {
-        imageBuf = fs.readFileSync(path);
+        imageBuf = fs.readFileSync(fileName);
     }
     catch {
-        console.error(`ERROR: Could not open file ${path}`);
+        console.error(`ERROR: Could not open file ${fileName}`);
         exit(1);
     }
     if (!isPng(imageBuf)) {
@@ -123,18 +127,65 @@ function getSecretChunk(chunks) {
         return null;
     }
 }
-const image = openPng("output2.png");
-const chunks = getChunks(image);
+// const image = openPng("target.png");
+// const chunks = getChunks(image);
 //* Put secret message into the image
 // putSecretChunk(chunks, "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.");
 // const outputBuffer = chunksToBuffer(chunks);
-// writePng("output2.png", outputBuffer);
+// writePng("output.png", outputBuffer);
 //* Get secret message from the image
-const secretChunk = getSecretChunk(chunks);
-if (secretChunk == null) {
-    console.log("No secret message found");
+// const secretChunk = getSecretChunk(chunks);
+// if (secretChunk == null) { console.log("No secret message found"); exit(0) };
+// console.info(`Secret message: ${secretChunk.data.toString()}`);
+const args = argv.slice(2);
+const rl = readLine.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+if (args.length === 0) {
+    console.info("Usage: steg --hide || --reveal");
     exit(0);
 }
-;
-console.info(`Secret message: ${secretChunk.data.toString()}`);
-//TODO: Create a convenient CLI
+if (args[0] === "--hide") {
+    rl.question('Enter target PNG filename: ', targetFile => {
+        rl.question('Enter output PNG filename: ', outputFile => {
+            rl.question('Enter secret message: ', secretMsg => {
+                if (path.extname(targetFile) !== ".png") {
+                    targetFile += ".png";
+                    console.log(chalk.yellow(`WARNING: Target filename will be overwritten as ${targetFile}`));
+                }
+                if (path.extname(outputFile) !== ".png") {
+                    outputFile += ".png";
+                    console.log(chalk.yellow(`WARNING: Output filename will be overwritten as ${outputFile}`));
+                }
+                const image = openPng(targetFile);
+                const chunks = getChunks(image);
+                putSecretChunk(chunks, secretMsg);
+                const outputBuffer = chunksToBuffer(chunks);
+                writePng(outputFile, outputBuffer);
+                console.log(chalk.green(`Message '${secretMsg}' was successfully hidden in '${outputFile}'`));
+                rl.close();
+                exit(0);
+            });
+        });
+    });
+}
+if (args[0] === "--reveal") {
+    rl.question("Enter target PNG filename: ", targetFile => {
+        if (path.extname(targetFile) !== ".png") {
+            targetFile += ".png";
+            console.log(chalk.yellow(`WARNING: Target filename will be overwritten as ${targetFile}`));
+        }
+        const image = openPng(targetFile);
+        const chunks = getChunks(image);
+        const secretChunk = getSecretChunk(chunks);
+        if (secretChunk == null) {
+            console.info("No secret message found");
+            exit(0);
+        }
+        ;
+        console.log(chalk.green(`Secret message: ${secretChunk.data.toString()}`));
+        rl.close();
+        exit(0);
+    });
+}
