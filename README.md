@@ -9,8 +9,6 @@ $ yarn run start
 
 ## Global usage
 
-- 
-
 ### Build:
 ```console
 $ yarn run build
