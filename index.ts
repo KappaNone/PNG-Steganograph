@@ -17,9 +17,16 @@ function openPng(fileName: string): Buffer {
   let imageBuf;
   
   try { imageBuf = fs.readFileSync(fileName) }
-  catch {
-    console.error(`ERROR: Could not open file ${fileName}`);
-    exit(1)
+  catch (err: any) {
+    switch (err.code) {
+      case "ENOENT":
+        console.error(`ERROR: File ${fileName} not found`);
+        break;
+      default:
+        console.error(`ERROR: Could not open file ${fileName}: ${err.message}`); 
+        break;
+    }
+    exit(1);
   }
   if (!isPng(imageBuf)) {
     console.error("ERROR: Provided file is not PNG image");
