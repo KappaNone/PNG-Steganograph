@@ -3,7 +3,7 @@
 ## Quick Start
 
 ```console
-$ yarn --frozen-lockfile install
+$ yarn --frozen-lockfile
 $ yarn run start
 ```
 
@@ -14,7 +14,7 @@ $ yarn run start
 $ npm install tsx -g
 ```
 
-### Install dependencies globally:
+### Install script globally:
 ```console
 $ npm install -g
 ```
