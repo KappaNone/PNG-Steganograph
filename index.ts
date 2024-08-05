@@ -27,7 +27,7 @@ interface Chunk {
 
 function openPng(fileName: string): Buffer {
   let imageBuf;
-  
+
   try { imageBuf = fs.readFileSync(fileName) }
   catch (err: any) {
     switch (err.code) {
@@ -35,7 +35,7 @@ function openPng(fileName: string): Buffer {
         console.error(err.message);
         break;
       default:
-        console.error(err.message); 
+        console.error(err.message);
         break;
     }
     exit(1);
@@ -65,17 +65,17 @@ function isPng(file: Buffer): boolean {
 function setBytes(file: Buffer, buffer: Buffer, offset: number): number {
   const byteLength = Buffer.byteLength(buffer);
   const endPos = offset + byteLength;
-  
-  try { buffer.set(file.subarray(offset, endPos)) } 
+
+  try { buffer.set(file.subarray(offset, endPos)) }
   catch {
     console.error("ERROR: Failed to set bytes in the buffer");
     exit(1)
   }
-  
+
   return endPos;
 }
 
-function getChunk(file: Buffer, offset: number): [Chunk, number]{
+function getChunk(file: Buffer, offset: number): [Chunk, number] {
   const chunkSize = Buffer.alloc(4);
   const chunkSizeEnd = setBytes(file, chunkSize, offset);
 
@@ -85,7 +85,7 @@ function getChunk(file: Buffer, offset: number): [Chunk, number]{
   const chunkData = Buffer.alloc(chunkSize.readInt32BE());
   const chunkDataEnd = setBytes(file, chunkData, chunkTypeEnd);
 
-  const chunkCRC  = Buffer.alloc(4);
+  const chunkCRC = Buffer.alloc(4);
   const chunkEnd = setBytes(file, chunkCRC, chunkDataEnd)
 
   const chunk: Chunk = {
@@ -121,7 +121,7 @@ function chunkToBuffer(chunk: Chunk): Buffer {
   chunkType.write(chunk.type);
 
   return Buffer.concat([chunkSize, chunkType, chunk.data, chunk.crc]);
-} 
+}
 
 function chunksToBuffer(chunks: Chunk[]): Buffer {
   const buffers = [PNG_SIG]
@@ -136,7 +136,7 @@ function deleteSecretChunks(chunks: Chunk[]): void {
   const secretChunkIndex = chunks.findIndex(chunk => chunk.type == "scRT");
   if (secretChunkIndex != -1) {
     try { chunks.splice(secretChunkIndex, 1) }
-    catch { 
+    catch {
       console.error("ERROR: Cannot delete an existing secret chunk")
       exit(1)
     }
@@ -153,9 +153,9 @@ function putSecretChunk(chunks: Chunk[], secretMsg: string): void {
     data: secretMsgData,
     crc: Buffer.alloc(4)
   }
-  
+
   try { chunks.splice(chunks.length - 1, 0, secretChunk) }
-  catch { 
+  catch {
     console.error("ERROR: Cannot add a new secret chunk")
     exit(1)
   }
@@ -194,8 +194,8 @@ if (actionFlag === "--hide") {
           console.error(`ERROR: ${targetFile} must contain an extension`)
           exit(0)
         }
-      
-        if (path.extname(outputFile)!== ".png") {
+
+        if (path.extname(outputFile) !== ".png") {
           outputFile += ".png"
           console.warn(`WARNING: Output filename will be overwritten as '${outputFile}'`)
         }
@@ -225,7 +225,6 @@ else if (actionFlag === "--reveal") {
 
     const image = openPng(targetFile);
     const chunks = getChunks(image);
-
     const secretChunk = getSecretChunk(chunks);
     if (secretChunk == null) { console.info("No secret message found"); exit(0) };
     console.success(`Secret message: ${secretChunk.data.toString()}`, '\n');
