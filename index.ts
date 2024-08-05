@@ -30,14 +30,7 @@ function openPng(fileName: string): Buffer {
 
   try { imageBuf = fs.readFileSync(fileName) }
   catch (err: any) {
-    switch (err.code) {
-      case "ENOENT":
-        console.error(err.message);
-        break;
-      default:
-        console.error(err.message);
-        break;
-    }
+    console.error(err.message);
     exit(1);
   }
   if (!isPng(imageBuf)) {
