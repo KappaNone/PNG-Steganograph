@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as readLine from "node:readline"
 import { argv, exit } from "node:process";
 import path from "node:path"
-
+// test
 const PNG_SIG = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 
 declare global {
